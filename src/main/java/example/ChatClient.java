@@ -1,4 +1,4 @@
-/*
+package example;/*
  * Copyright (c) 2010-2020 Nathan Rajlich
  *
  *  Permission is hereby granted, free of charge, to any person
@@ -106,6 +106,7 @@ public class ChatClient extends JFrame implements ActionListener {
     setVisible(true);
   }
 
+  @Override
   public void actionPerformed(ActionEvent e) {
 
     if (e.getSource() == chatField) {

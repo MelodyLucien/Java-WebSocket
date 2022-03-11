@@ -1,4 +1,4 @@
-/*
+package example;/*
  * Copyright (c) 2010-2020 Nathan Rajlich
  *
  *  Permission is hereby granted, free of charge, to any person
@@ -30,19 +30,18 @@ import java.net.InetSocketAddress;
 import org.java_websocket.WebSocket;
 import org.java_websocket.drafts.Draft;
 import org.java_websocket.exceptions.InvalidDataException;
+import org.java_websocket.framing.CloseFrame;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.handshake.ServerHandshakeBuilder;
 
 /**
- * This example shows how to add additional headers to your server handshake response
+ * This example shows how to reject a handshake as a server from a client.
  * <p>
  * For this you have to override onWebsocketHandshakeReceivedAsServer in your WebSocketServer class
- * <p>
- * We are simple adding the additional header "Access-Control-Allow-Origin" to our server response
  */
-public class ServerAdditionalHeaderExample extends ChatServer {
+public class ServerRejectHandshakeExample extends ChatServer {
 
-  public ServerAdditionalHeaderExample(int port) {
+  public ServerRejectHandshakeExample(int port) {
     super(new InetSocketAddress(port));
   }
 
@@ -51,7 +50,24 @@ public class ServerAdditionalHeaderExample extends ChatServer {
       ClientHandshake request) throws InvalidDataException {
     ServerHandshakeBuilder builder = super
         .onWebsocketHandshakeReceivedAsServer(conn, draft, request);
-    builder.put("Access-Control-Allow-Origin", "*");
+    //In this example we don't allow any resource descriptor ( "ws://localhost:8887/?roomid=1 will be rejected but ws://localhost:8887 is fine)
+    if (!request.getResourceDescriptor().equals("/")) {
+      throw new InvalidDataException(CloseFrame.POLICY_VALIDATION, "Not accepted!");
+    }
+    //If there are no cookies set reject it as well.
+    if (!request.hasFieldValue("Cookie")) {
+      throw new InvalidDataException(CloseFrame.POLICY_VALIDATION, "Not accepted!");
+    }
+    //If the cookie does not contain a specific value
+    if (!request.getFieldValue("Cookie").equals("username=nemo")) {
+      throw new InvalidDataException(CloseFrame.POLICY_VALIDATION, "Not accepted!");
+    }
+    //If there is a Origin Field, it has to be localhost:8887
+    if (request.hasFieldValue("Origin")) {
+      if (!request.getFieldValue("Origin").equals("localhost:8887")) {
+        throw new InvalidDataException(CloseFrame.POLICY_VALIDATION, "Not accepted!");
+      }
+    }
     return builder;
   }
 
@@ -62,7 +78,7 @@ public class ServerAdditionalHeaderExample extends ChatServer {
       port = Integer.parseInt(args[0]);
     } catch (Exception ex) {
     }
-    ServerAdditionalHeaderExample s = new ServerAdditionalHeaderExample(port);
+    ServerRejectHandshakeExample s = new ServerRejectHandshakeExample(port);
     s.start();
     System.out.println("Server started on port: " + s.getPort());
 

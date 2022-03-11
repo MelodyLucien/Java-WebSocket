@@ -1,4 +1,4 @@
-/*
+package example;/*
  * Copyright (c) 2010-2020 Nathan Rajlich
  *
  *  Permission is hereby granted, free of charge, to any person

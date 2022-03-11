@@ -1,4 +1,4 @@
-/*
+package example;/*
  * Copyright (c) 2010-2020 Nathan Rajlich
  *
  *  Permission is hereby granted, free of charge, to any person
@@ -29,57 +29,53 @@ import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import org.java_websocket.WebSocket;
-import org.java_websocket.drafts.Draft;
-import org.java_websocket.drafts.Draft_6455;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
 /**
  * A simple WebSocketServer implementation. Keeps track of a "chatroom".
+ * <p>
+ * Shows how to use the attachment for a WebSocket. This example just uses a simple integer as ID.
+ * Setting an attachment also works in the WebSocketClient
  */
-public class ChatServer extends WebSocketServer {
+public class ChatServerAttachmentExample extends WebSocketServer {
 
-  public ChatServer(int port) throws UnknownHostException {
+  Integer index = 0;
+
+  public ChatServerAttachmentExample(int port) throws UnknownHostException {
     super(new InetSocketAddress(port));
   }
 
-  public ChatServer(InetSocketAddress address) {
+  public ChatServerAttachmentExample(InetSocketAddress address) {
     super(address);
-  }
-
-  public ChatServer(int port, Draft_6455 draft) {
-    super(new InetSocketAddress(port), Collections.<Draft>singletonList(draft));
   }
 
   @Override
   public void onOpen(WebSocket conn, ClientHandshake handshake) {
-    conn.send("Welcome to the server!"); //This method sends a message to the new client
-    broadcast("new connection: " + handshake
-        .getResourceDescriptor()); //This method sends a message to all clients connected
+    conn.setAttachment(index); //Set the attachment to the current index
+    index++;
+    // Get the attachment of this connection as Integer
     System.out.println(
-        conn.getRemoteSocketAddress().getAddress().getHostAddress() + " entered the room!");
+        conn.getRemoteSocketAddress().getAddress().getHostAddress() + " entered the room! ID: "
+            + conn.<Integer>getAttachment());
   }
 
   @Override
   public void onClose(WebSocket conn, int code, String reason, boolean remote) {
-    broadcast(conn + " has left the room!");
-    System.out.println(conn + " has left the room!");
+    // Get the attachment of this connection as Integer
+    System.out.println(conn + " has left the room! ID: " + conn.<Integer>getAttachment());
   }
 
   @Override
   public void onMessage(WebSocket conn, String message) {
-    broadcast(message);
     System.out.println(conn + ": " + message);
   }
 
   @Override
   public void onMessage(WebSocket conn, ByteBuffer message) {
-    broadcast(message.array());
     System.out.println(conn + ": " + message);
   }
-
 
   public static void main(String[] args) throws InterruptedException, IOException {
     int port = 8887; // 843 flash policy port
@@ -87,7 +83,7 @@ public class ChatServer extends WebSocketServer {
       port = Integer.parseInt(args[0]);
     } catch (Exception ex) {
     }
-    ChatServer s = new ChatServer(port);
+    ChatServerAttachmentExample s = new ChatServerAttachmentExample(port);
     s.start();
     System.out.println("ChatServer started on port: " + s.getPort());
 
@@ -113,8 +109,6 @@ public class ChatServer extends WebSocketServer {
   @Override
   public void onStart() {
     System.out.println("Server started!");
-    setConnectionLostTimeout(0);
-    setConnectionLostTimeout(100);
   }
 
 }

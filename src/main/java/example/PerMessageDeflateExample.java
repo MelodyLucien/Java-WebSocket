@@ -1,3 +1,5 @@
+package example;
+
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;

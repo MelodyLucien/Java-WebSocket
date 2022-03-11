@@ -1,4 +1,4 @@
-/*
+package example;/*
  * Copyright (c) 2010-2020 Nathan Rajlich
  *
  *  Permission is hereby granted, free of charge, to any person
@@ -27,55 +27,34 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 import org.java_websocket.WebSocket;
+import org.java_websocket.drafts.Draft;
+import org.java_websocket.exceptions.InvalidDataException;
 import org.java_websocket.handshake.ClientHandshake;
-import org.java_websocket.server.WebSocketServer;
+import org.java_websocket.handshake.ServerHandshakeBuilder;
 
 /**
- * A simple WebSocketServer implementation. Keeps track of a "chatroom".
+ * This example shows how to add additional headers to your server handshake response
  * <p>
- * Shows how to use the attachment for a WebSocket. This example just uses a simple integer as ID.
- * Setting an attachment also works in the WebSocketClient
+ * For this you have to override onWebsocketHandshakeReceivedAsServer in your WebSocketServer class
+ * <p>
+ * We are simple adding the additional header "Access-Control-Allow-Origin" to our server response
  */
-public class ChatServerAttachmentExample extends WebSocketServer {
+public class ServerAdditionalHeaderExample extends ChatServer {
 
-  Integer index = 0;
-
-  public ChatServerAttachmentExample(int port) throws UnknownHostException {
+  public ServerAdditionalHeaderExample(int port) {
     super(new InetSocketAddress(port));
   }
 
-  public ChatServerAttachmentExample(InetSocketAddress address) {
-    super(address);
+  @Override
+  public ServerHandshakeBuilder onWebsocketHandshakeReceivedAsServer(WebSocket conn, Draft draft,
+      ClientHandshake request) throws InvalidDataException {
+    ServerHandshakeBuilder builder = super
+        .onWebsocketHandshakeReceivedAsServer(conn, draft, request);
+    builder.put("Access-Control-Allow-Origin", "*");
+    return builder;
   }
 
-  @Override
-  public void onOpen(WebSocket conn, ClientHandshake handshake) {
-    conn.setAttachment(index); //Set the attachment to the current index
-    index++;
-    // Get the attachment of this connection as Integer
-    System.out.println(
-        conn.getRemoteSocketAddress().getAddress().getHostAddress() + " entered the room! ID: "
-            + conn.<Integer>getAttachment());
-  }
-
-  @Override
-  public void onClose(WebSocket conn, int code, String reason, boolean remote) {
-    // Get the attachment of this connection as Integer
-    System.out.println(conn + " has left the room! ID: " + conn.<Integer>getAttachment());
-  }
-
-  @Override
-  public void onMessage(WebSocket conn, String message) {
-    System.out.println(conn + ": " + message);
-  }
-
-  @Override
-  public void onMessage(WebSocket conn, ByteBuffer message) {
-    System.out.println(conn + ": " + message);
-  }
 
   public static void main(String[] args) throws InterruptedException, IOException {
     int port = 8887; // 843 flash policy port
@@ -83,9 +62,9 @@ public class ChatServerAttachmentExample extends WebSocketServer {
       port = Integer.parseInt(args[0]);
     } catch (Exception ex) {
     }
-    ChatServerAttachmentExample s = new ChatServerAttachmentExample(port);
+    ServerAdditionalHeaderExample s = new ServerAdditionalHeaderExample(port);
     s.start();
-    System.out.println("ChatServer started on port: " + s.getPort());
+    System.out.println("Server started on port: " + s.getPort());
 
     BufferedReader sysin = new BufferedReader(new InputStreamReader(System.in));
     while (true) {
@@ -97,18 +76,4 @@ public class ChatServerAttachmentExample extends WebSocketServer {
       }
     }
   }
-
-  @Override
-  public void onError(WebSocket conn, Exception ex) {
-    ex.printStackTrace();
-    if (conn != null) {
-      // some errors like port binding failed may not be assignable to a specific websocket
-    }
-  }
-
-  @Override
-  public void onStart() {
-    System.out.println("Server started!");
-  }
-
 }

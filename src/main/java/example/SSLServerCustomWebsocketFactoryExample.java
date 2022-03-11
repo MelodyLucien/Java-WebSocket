@@ -1,6 +1,4 @@
-
-
-/*
+package example;/*
  * Copyright (c) 2010-2020 Nathan Rajlich
  *
  *  Permission is hereby granted, free of charge, to any person
@@ -29,23 +27,24 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.nio.file.Paths;
 import java.security.KeyStore;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManagerFactory;
-import org.java_websocket.server.SSLParametersWebSocketServerFactory;
+import org.java_websocket.server.CustomSSLWebSocketServerFactory;
 
 /**
- * Copy of SSLServerExample except we use @link SSLEngineWebSocketServerFactory to customize
- * clientMode/ClientAuth to force client to present a cert. Example of Two-way
- * ssl/MutualAuthentication/ClientAuthentication
+ * Example for using the CustomSSLWebSocketServerFactory to allow just specific cipher suites
  */
-public class TwoWaySSLServerExample {
+public class SSLServerCustomWebsocketFactoryExample {
 
   /*
    * Keystore with certificate created like so (in JKS format):
    *
-   *keytool -genkey -keyalg RSA -validity 3650 -keystore "keystore.jks" -storepass "storepassword" -keypass "keypassword" -alias "default" -dname "CN=127.0.0.1, OU=MyOrgUnit, O=MyOrg, L=MyCity, S=MyRegion, C=MyCountry"
+   *keytool -genkey -validity 3650 -keystore "keystore.jks" -storepass "storepassword" -keypass "keypassword" -alias "default" -dname "CN=127.0.0.1, OU=MyOrgUnit, O=MyOrg, L=MyCity, S=MyRegion, C=MyCountry"
    */
   public static void main(String[] args) throws Exception {
     ChatServer chatserver = new ChatServer(
@@ -70,11 +69,22 @@ public class TwoWaySSLServerExample {
     SSLContext sslContext = SSLContext.getInstance("TLS");
     sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
-    SSLParameters sslParameters = new SSLParameters();
-    // This is all we need
-    sslParameters.setNeedClientAuth(true);
-    chatserver
-        .setWebSocketFactory(new SSLParametersWebSocketServerFactory(sslContext, sslParameters));
+    //Lets remove some ciphers and protocols
+    SSLEngine engine = sslContext.createSSLEngine();
+    List<String> ciphers = new ArrayList<String>(Arrays.asList(engine.getEnabledCipherSuites()));
+    ciphers.remove("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256");
+    List<String> protocols = new ArrayList<String>(Arrays.asList(engine.getEnabledProtocols()));
+    protocols.remove("SSLv3");
+    CustomSSLWebSocketServerFactory factory = new CustomSSLWebSocketServerFactory(sslContext,
+        protocols.toArray(new String[]{}), ciphers.toArray(new String[]{}));
+
+    // Different example just using specific ciphers and protocols
+        /*
+        String[] enabledProtocols = {"TLSv1.2"};
+		String[] enabledCipherSuites = {"TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA"};
+        CustomSSLWebSocketServerFactory factory = new CustomSSLWebSocketServerFactory(sslContext, enabledProtocols,enabledCipherSuites);
+        */
+    chatserver.setWebSocketFactory(factory);
 
     chatserver.start();
 

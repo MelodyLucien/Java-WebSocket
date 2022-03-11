@@ -1,4 +1,4 @@
-/*
+package example;/*
  *  Copyright (c) 2010-2020 Nathan Rajlich
  *
  *  Permission is hereby granted, free of charge, to any person
@@ -23,7 +23,6 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,7 +34,7 @@ import org.java_websocket.protocols.Protocol;
 /**
  * This example demonstrates how to use a specific Sec-WebSocket-Protocol for your connection.
  */
-public class SecWebSocketProtocolClientExample {
+public class SecWebSocketProtocolServerExample {
 
   public static void main(String[] args) throws URISyntaxException {
     // This draft only allows you to use the specific Sec-WebSocket-Protocol without a fallback.
@@ -49,7 +48,7 @@ public class SecWebSocketProtocolClientExample {
     Draft_6455 draft_ocppAndFallBack = new Draft_6455(Collections.<IExtension>emptyList(),
         protocols);
 
-    ExampleClient c = new ExampleClient(new URI("ws://echo.websocket.org"), draft_ocppAndFallBack);
-    c.connect();
+    ChatServer chatServer = new ChatServer(8887, draft_ocppOnly);
+    chatServer.start();
   }
 }
